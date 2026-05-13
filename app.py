@@ -378,26 +378,30 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     left, right = st.columns([1, 2])
 
-    with left:
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-       material = st.selectbox("Material", list(DATABASE.keys()))
+   with left:
+    st.markdown('<div class="card">', unsafe_allow_html=True)
 
-thickness_options = sorted(
-    DATABASE[material].keys(),
-    key=lambda x: float(x)
-)
+    material = st.selectbox(
+        "Material",
+        list(DATABASE.keys())
+    )
 
-thickness = st.selectbox(
-    "Thickness [mm]",
-    thickness_options
-)
+    thickness_options = sorted(
+        DATABASE[material].keys(),
+        key=lambda x: float(x)
+    )
 
-machine_profile = st.selectbox(
-    "Machine / controller",
-    list(MACHINE_PROFILES.keys())
-)
-        st.markdown("</div>", unsafe_allow_html=True)
+    thickness = st.selectbox(
+        "Thickness [mm]",
+        thickness_options
+    )
 
+    machine_profile = st.selectbox(
+        "Machine / controller",
+        list(MACHINE_PROFILES.keys())
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
     raw_params = dict(zip(PARAMETER_NAMES, DATABASE[material][thickness]))
     params = apply_machine_profile(raw_params, machine_profile)
 
