@@ -378,30 +378,31 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 with tab1:
     left, right = st.columns([1, 2])
 
-   with left:
-    st.markdown('<div class="card">', unsafe_allow_html=True)
+    with left:
+        st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    material = st.selectbox(
-        "Material",
-        list(DATABASE.keys())
-    )
+        material = st.selectbox(
+            "Material",
+            list(DATABASE.keys())
+        )
 
-    thickness_options = sorted(
-        DATABASE[material].keys(),
-        key=lambda x: float(x)
-    )
+        thickness_options = sorted(
+            DATABASE[material].keys(),
+            key=lambda x: float(x)
+        )
 
-    thickness = st.selectbox(
-        "Thickness [mm]",
-        thickness_options
-    )
+        thickness = st.selectbox(
+            "Thickness [mm]",
+            thickness_options
+        )
 
-    machine_profile = st.selectbox(
-        "Machine / controller",
-        list(MACHINE_PROFILES.keys())
-    )
+        machine_profile = st.selectbox(
+            "Machine / controller",
+            list(MACHINE_PROFILES.keys())
+        )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     raw_params = dict(zip(PARAMETER_NAMES, DATABASE[material][thickness]))
     params = apply_machine_profile(raw_params, machine_profile)
 
@@ -420,7 +421,11 @@ with tab1:
         c7.metric("Pierce delay", f"{params['Pierce delay [s]']} s")
         c8.metric("IHS", str(params["IHS setting"]))
 
-        st.table({"Parameter": list(params.keys()), "Value": list(params.values())})
+        st.table({
+            "Parameter": list(params.keys()),
+            "Value": list(params.values())
+        })
+
         st.warning("Starting values only. Calibrate per machine.")
 
 with tab2:
