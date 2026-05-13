@@ -380,9 +380,22 @@ with tab1:
 
     with left:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        material = st.selectbox("Material", list(DATABASE.keys()))
-        thickness = st.selectbox("Thickness [mm]", list(DATABASE[material].keys()))
-        machine_profile = st.selectbox("Machine / controller", list(MACHINE_PROFILES.keys()))
+       material = st.selectbox("Material", list(DATABASE.keys()))
+
+thickness_options = sorted(
+    DATABASE[material].keys(),
+    key=lambda x: float(x)
+)
+
+thickness = st.selectbox(
+    "Thickness [mm]",
+    thickness_options
+)
+
+machine_profile = st.selectbox(
+    "Machine / controller",
+    list(MACHINE_PROFILES.keys())
+)
         st.markdown("</div>", unsafe_allow_html=True)
 
     raw_params = dict(zip(PARAMETER_NAMES, DATABASE[material][thickness]))
