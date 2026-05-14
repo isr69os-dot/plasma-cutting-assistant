@@ -258,17 +258,34 @@ def param_row_to_list(row):
 
 @st.cache_data(ttl=30)
 def load_parameters_cloud():
-    rows = request_or_error(
+    default_rows = request_or_error(
         "GET",
         f"{REST_URL}/parameters?select=*&order=material.asc,thickness.asc",
         headers=base_headers(),
     )
+
     database = {}
-    for row in rows:
+
+    for row in default_rows:
         material = row["material"]
         thickness = row["thickness"]
+
         database.setdefault(material, {})
         database[material][thickness] = param_row_to_list(row)
+
+    user_rows = request_or_error(
+        "GET",
+        f"{REST_URL}/user_parameters?select=*",
+        headers=auth_headers(),
+    )
+
+    for row in user_rows:
+        material = row["material"]
+        thickness = row["thickness"]
+
+        database.setdefault(material, {})
+        database[material][thickness] = param_row_to_list(row)
+
     return database
 
 
@@ -292,12 +309,19 @@ def param_list_to_row(material, thickness, values):
 
 def update_parameter_cloud(material, thickness, values):
     payload = param_list_to_row(material, thickness, values)
+
+    payload["user_id"] = st.session_state["user_id"]
+
     request_or_error(
         "POST",
-        f"{REST_URL}/parameters?on_conflict=material,thickness",
-        headers={**base_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"},
+        f"{REST_URL}/user_parameters?on_conflict=user_id,material,thickness",
+        headers={
+            **auth_headers(),
+            "Prefer": "resolution=merge-duplicates,return=minimal"
+        },
         data=json.dumps(payload),
     )
+
     st.cache_data.clear()
 
 
