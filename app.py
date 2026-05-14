@@ -1,6 +1,8 @@
 import io
 import json
 import uuid
+import ezdxf
+import math
 from datetime import datetime
 from streamlit_cookies_manager import EncryptedCookieManager
 
@@ -466,6 +468,83 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "💰 Pricing",
 ])
 
+def distance_2d(p1, p2):
+    return math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2)
+
+
+def arc_length(radius, start_angle, end_angle):
+    angle = abs(end_angle - start_angle)
+
+    if angle > 360:
+        angle = angle % 360
+
+    if angle > 180:
+        angle = 360 - angle
+
+    return 2 * math.pi * radius * (angle / 360)
+
+
+def analyze_dxf(uploaded_file):
+    doc = ezdxf.read(uploaded_file)
+    msp = doc.modelspace()
+
+    total_length_mm = 0
+    entity_count = 0
+    pierce_estimate = 0
+
+    for entity in msp:
+        entity_type = entity.dxftype()
+
+        try:
+            if entity_type == "LINE":
+                total_length_mm += distance_2d(entity.dxf.start, entity.dxf.end)
+                entity_count += 1
+
+            elif entity_type == "CIRCLE":
+                total_length_mm += 2 * math.pi * entity.dxf.radius
+                entity_count += 1
+
+            elif entity_type == "ARC":
+                total_length_mm += arc_length(
+                    entity.dxf.radius,
+                    entity.dxf.start_angle,
+                    entity.dxf.end_angle,
+                )
+                entity_count += 1
+
+            elif entity_type == "LWPOLYLINE":
+                points = list(entity.get_points("xy"))
+                if len(points) > 1:
+                    for i in range(len(points) - 1):
+                        total_length_mm += distance_2d(points[i], points[i + 1])
+
+                    if entity.closed:
+                        total_length_mm += distance_2d(points[-1], points[0])
+
+                    entity_count += 1
+
+            elif entity_type == "POLYLINE":
+                points = [v.dxf.location for v in entity.vertices]
+                if len(points) > 1:
+                    for i in range(len(points) - 1):
+                        total_length_mm += distance_2d(points[i], points[i + 1])
+
+                    if entity.is_closed:
+                        total_length_mm += distance_2d(points[-1], points[0])
+
+                    entity_count += 1
+
+        except Exception:
+            continue
+
+    pierce_estimate = entity_count
+
+    return {
+        "total_length_mm": round(total_length_mm, 2),
+        "total_length_m": round(total_length_mm / 1000, 3),
+        "entity_count": entity_count,
+        "pierce_estimate": pierce_estimate,
+    }
 
 with tab1:
     left, right = st.columns([1, 2])
@@ -736,9 +815,46 @@ with tab7:
             )
 
             row = pricing_df[pricing_df["thickness"] == selected_thickness].iloc[0]
+            dxf_file = st.file_uploader(
+                "Upload DXF for automatic cut length",
+                type=["dxf"],
+                key="pricing_dxf"
+            )
 
-            cut_length_m = st.number_input("Total cutting length [m]", min_value=0.0, value=1.0, step=0.1)
-            pierces = st.number_input("Number of pierces", min_value=0, value=1, step=1)
+            dxf_result = None
+
+            if dxf_file is not None:
+                try:
+                    dxf_result = analyze_dxf(dxf_file)
+
+                    st.success("DXF analyzed successfully.")
+                    st.metric("DXF cut length", f"{dxf_result['total_length_m']} m")
+                    st.metric("Estimated pierces", dxf_result["pierce_estimate"])
+
+                    default_cut_length = float(dxf_result["total_length_m"])
+                    default_pierces = int(dxf_result["pierce_estimate"])
+
+                except Exception as e:
+                    st.error(f"DXF analysis failed: {e}")
+                    default_cut_length = 1.0
+                    default_pierces = 1
+            else:
+                default_cut_length = 1.0
+                default_pierces = 1
+                
+            cut_length_m = st.number_input(
+                "Total cutting length [m]",
+                min_value=0.0,
+                value=default_cut_length,
+                step=0.1
+            )
+
+            pierces = st.number_input(
+                "Number of pierces",
+                min_value=0,
+                value=default_pierces,
+                step=1
+            )
             quantity = st.number_input("Quantity", min_value=1, value=1, step=1)
 
             include_file_setup = st.checkbox("Include DXF/file setup", value=True)
