@@ -815,51 +815,50 @@ with tab7:
             )
 
             row = pricing_df[pricing_df["thickness"] == selected_thickness].iloc[0]
-            dxf_file = st.file_uploader(
-                "Upload DXF for automatic cut length",
-                type=["dxf"],
-                key="pricing_dxf"
-            )
 
-            dxf_result = None
-
-            if dxf_file is not None:
-                try:
-                    dxf_result = analyze_dxf(dxf_file)
-
-                    st.success("DXF analyzed successfully.")
-                    st.metric("DXF cut length", f"{dxf_result['total_length_m']} m")
-                    st.metric("Estimated pierces", dxf_result["pierce_estimate"])
-
-                    default_cut_length = float(dxf_result["total_length_m"])
-                    default_pierces = int(dxf_result["pierce_estimate"])
-
-                except Exception as e:
-                    st.error(f"DXF analysis failed: {e}")
-                    default_cut_length = 1.0
-                    default_pierces = 1
-            else:
-                default_cut_length = 1.0
-                default_pierces = 1
-                
             cut_length_m = st.number_input(
                 "Total cutting length [m]",
                 min_value=0.0,
-                value=default_cut_length,
+                value=1.0,
                 step=0.1
             )
 
             pierces = st.number_input(
                 "Number of pierces",
                 min_value=0,
-                value=default_pierces,
+                value=1,
                 step=1
             )
-            quantity = st.number_input("Quantity", min_value=1, value=1, step=1)
 
-            include_file_setup = st.checkbox("Include DXF/file setup", value=True)
-            include_finish = st.checkbox("Include finishing / dross cleanup", value=False)
-            urgent = st.checkbox("Urgent job factor", value=False)
+            quantity = st.number_input(
+                "Quantity",
+                min_value=1,
+                value=1,
+                step=1
+            )
+
+            include_file_setup = st.checkbox(
+                "Include DXF/file setup",
+                value=True
+            )
+
+            cleanup_type = st.selectbox(
+                "Cleanup / finishing",
+                [
+                    "None",
+                    "Basic cleanup",
+                    "Full edge cleanup"
+                ]
+            )
+
+            urgency_mode = st.selectbox(
+                "Urgency",
+                [
+                    "Normal",
+                    "Urgent (+25%)",
+                    "Same day (+50%)"
+                ]
+            )
 
         with right:
             price_per_meter = float(row["price_per_meter"])
@@ -867,28 +866,39 @@ with tab7:
             minimum_price = float(row.get("minimum_price") or 0)
             file_setup_price = float(row.get("file_setup_price") or 0)
             finish_price = float(row.get("finish_price") or 0)
-            urgent_factor = float(row.get("urgent_factor") or 1)
+
+            if cleanup_type == "None":
+                cleanup_price = 0
+            elif cleanup_type == "Basic cleanup":
+                cleanup_price = finish_price
+            else:
+                cleanup_price = finish_price * 2
+
+            if urgency_mode == "Normal":
+                urgency_multiplier = 1.0
+            elif urgency_mode == "Urgent (+25%)":
+                urgency_multiplier = 1.25
+            else:
+                urgency_multiplier = 1.5
 
             base_cut_price = cut_length_m * price_per_meter
             pierce_price = pierces * price_per_pierce
             setup_price = file_setup_price if include_file_setup else 0
-            finishing_price = finish_price if include_finish else 0
 
-            subtotal_single = base_cut_price + pierce_price + setup_price + finishing_price
+            subtotal_single = base_cut_price + pierce_price + setup_price + cleanup_price
             subtotal_all = subtotal_single * quantity
-
-            if urgent:
-                subtotal_all *= urgent_factor
-
-            final_price = max(subtotal_all, minimum_price)
+            subtotal_with_urgency = subtotal_all * urgency_multiplier
+            final_price = max(subtotal_with_urgency, minimum_price)
 
             st.metric("Cut length price", f"₪{base_cut_price:.2f}")
             st.metric("Pierce price", f"₪{pierce_price:.2f}")
             st.metric("Setup price", f"₪{setup_price:.2f}")
+            st.metric("Cleanup price", f"₪{cleanup_price:.2f}")
+            st.metric("Urgency multiplier", f"x{urgency_multiplier}")
             st.metric("Final price", f"₪{final_price:.2f}")
 
             st.info(
-                f"Price basis: ₪{price_per_meter}/m, ₪{price_per_pierce}/pierce, minimum ₪{minimum_price}"
+                f"Minimum job price: ₪{minimum_price:.2f}"
             )
 
         st.divider()
@@ -896,7 +906,16 @@ with tab7:
 
         st.dataframe(
             pricing_df[
-                ["thickness", "price_per_meter", "price_per_pierce", "typical_speed_mm_min", "minimum_price", "file_setup_price"]
+                [
+                    "thickness",
+                    "price_per_meter",
+                    "price_per_pierce",
+                    "typical_speed_mm_min",
+                    "minimum_price",
+                    "file_setup_price",
+                    "finish_price",
+                    "urgent_factor"
+                ]
             ],
             use_container_width=True
         )
@@ -924,15 +943,21 @@ with tab7:
         )
 
         new_minimum_price = st.number_input(
-            "Minimum price",
+            "Minimum job price",
             value=float(edit_row.get("minimum_price") or 0),
             key="new_minimum_price"
         )
 
         new_file_setup_price = st.number_input(
-            "File setup price",
+            "DXF / file setup price",
             value=float(edit_row.get("file_setup_price") or 0),
             key="new_file_setup_price"
+        )
+
+        new_finish_price = st.number_input(
+            "Basic cleanup price",
+            value=float(edit_row.get("finish_price") or 0),
+            key="new_finish_price"
         )
 
         if st.button("Save my pricing"):
@@ -944,8 +969,8 @@ with tab7:
                 "typical_speed_mm_min": float(edit_row.get("typical_speed_mm_min") or 0),
                 "minimum_price": new_minimum_price,
                 "file_setup_price": new_file_setup_price,
-                "finish_price": float(edit_row.get("finish_price") or 0),
-                "urgent_factor": float(edit_row.get("urgent_factor") or 1),
+                "finish_price": new_finish_price,
+                "urgent_factor": 1.25,
             }
 
             upsert_pricing_row(payload)
