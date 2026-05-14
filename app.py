@@ -121,6 +121,10 @@ def request_or_error(method, url, **kwargs):
     return None
 
 
+def sort_thickness_values(values):
+    return sorted(values, key=lambda x: float(x))
+
+
 def param_row_to_list(row):
     return [
         row["current_a"], row["nozzle_mm"], row["speed_mm_min"], row["arc_voltage_v"],
@@ -381,25 +385,12 @@ with tab1:
     with left:
         st.markdown('<div class="card">', unsafe_allow_html=True)
 
-        material = st.selectbox(
-            "Material",
-            list(DATABASE.keys())
-        )
+        material = st.selectbox("Material", list(DATABASE.keys()))
 
-        thickness_options = sorted(
-            DATABASE[material].keys(),
-            key=lambda x: float(x)
-        )
+        thickness_options = sort_thickness_values(DATABASE[material].keys())
+        thickness = st.selectbox("Thickness [mm]", thickness_options)
 
-        thickness = st.selectbox(
-            "Thickness [mm]",
-            thickness_options
-        )
-
-        machine_profile = st.selectbox(
-            "Machine / controller",
-            list(MACHINE_PROFILES.keys())
-        )
+        machine_profile = st.selectbox("Machine / controller", list(MACHINE_PROFILES.keys()))
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -421,11 +412,7 @@ with tab1:
         c7.metric("Pierce delay", f"{params['Pierce delay [s]']} s")
         c8.metric("IHS", str(params["IHS setting"]))
 
-        st.table({
-            "Parameter": list(params.keys()),
-            "Value": list(params.values())
-        })
-
+        st.table({"Parameter": list(params.keys()), "Value": list(params.values())})
         st.warning("Starting values only. Calibrate per machine.")
 
 with tab2:
@@ -527,7 +514,9 @@ with tab4:
     st.subheader("Edit cloud parameters")
 
     edit_material = st.selectbox("Material to edit", list(DATABASE.keys()), key="edit_material")
-    edit_thickness = st.selectbox("Thickness to edit", list(DATABASE[edit_material].keys()), key="edit_thickness")
+
+    edit_thickness_options = sort_thickness_values(DATABASE[edit_material].keys())
+    edit_thickness = st.selectbox("Thickness to edit", edit_thickness_options, key="edit_thickness")
 
     current_params = dict(zip(PARAMETER_NAMES, DATABASE[edit_material][edit_thickness]))
     updated = {}
@@ -597,12 +586,18 @@ with tab6:
         c2.metric("Average score", round(df["score"].mean(), 2))
         c3.metric("Best score", int(df["score"].max()))
 
-        material_filter = st.selectbox("Filter material", ["All"] + sorted(df["material"].dropna().unique().tolist()))
+        material_filter = st.selectbox(
+            "Filter material",
+            ["All"] + sorted(df["material"].dropna().unique().tolist())
+        )
 
         if material_filter != "All":
             df = df[df["material"] == material_filter]
 
-        thickness_filter = st.selectbox("Filter thickness", ["All"] + sorted(df["thickness"].dropna().unique().tolist()))
+        thickness_filter = st.selectbox(
+            "Filter thickness",
+            ["All"] + sort_thickness_values(df["thickness"].dropna().unique().tolist())
+        )
 
         if thickness_filter != "All":
             df = df[df["thickness"] == thickness_filter]
