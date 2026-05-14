@@ -475,6 +475,11 @@ def manual_suggestions(params, dross, cut_angle, hole_quality, arc_stability):
 
 def build_smart_feedback(params,manual_items,image_items,history,material,thickness,machine_profile,observed_issues,observation_severity,):
     all_items = manual_items + image_items
+    
+    diagnosis = "General cut tuning"
+    confidence_score = 0
+    reasons = []
+    
     issue_text = " | ".join(observed_issues).lower()
 
     if "bottom dross" in issue_text:
@@ -497,9 +502,7 @@ def build_smart_feedback(params,manual_items,image_items,history,material,thickn
         diagnosis = "Possible bevel caused by torch height or consumable wear"
         confidence_score += 1
 
-    diagnosis = "General cut tuning"
-    confidence_score = 0
-    reasons = []
+    
     next_action = "Change only one parameter and run another test cut."
     validation = [
         "Check bottom dross",
@@ -977,6 +980,7 @@ with tab5:
                 st.write("Notes:", record["notes"])
                 st.write("Recommendation result:", record.get("recommendation_result"))
                 st.write("Recommendation feedback:", record.get("recommendation_feedback"))
+                
                 st.write("Observed issues:", record.get("observed_issues"))
                 st.write("Observation severity:", record.get("observation_severity"))
 
