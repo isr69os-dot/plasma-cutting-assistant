@@ -842,6 +842,22 @@ Gas: {params['Gas / assist']}
                     unsafe_allow_html=True,
                 )
 
+    st.subheader("Recommendation result")
+
+    recommendation_result = st.selectbox(
+        "Did this recommendation improve the cut?",
+        [
+            "Not tested yet",
+            "Yes",
+            "Partially",
+            "No"
+        ]
+    )
+
+    recommendation_feedback = st.text_area(
+        "What happened after applying the recommendation?"
+    )
+
     if st.button("Save current test to cloud"):
         image_urls = upload_images_to_cloud(uploaded_images)
 
@@ -860,6 +876,8 @@ Gas: {params['Gas / assist']}
             "score": int(score),
             "notes": notes,
             "recommendations": all_suggestions,
+            "recommendation_result": recommendation_result,
+            "recommendation_feedback": recommendation_feedback,
         }
 
         save_cut_history_cloud(record)
@@ -909,6 +927,8 @@ with tab5:
                 st.write("Hole quality:", record["hole_quality"])
                 st.write("Arc stability:", record["arc_stability"])
                 st.write("Notes:", record["notes"])
+                st.write("Recommendation result:", record.get("recommendation_result"))
+                st.write("Recommendation feedback:", record.get("recommendation_feedback"))
 
                 st.subheader("Parameters")
                 st.json(record["parameters"])
