@@ -82,13 +82,34 @@ def auth_headers():
     }
 
 
-def request_or_error(method, url, headers=None, **kwargs):
-    res = requests.request(method, url, headers=headers or base_headers(), timeout=30, **kwargs)
+def request_or_error(method, url, headers=None, retry=True, **kwargs):
+    selected_headers = headers or base_headers()
+
+    res = requests.request(
+        method,
+        url,
+        headers=selected_headers,
+        timeout=30,
+        **kwargs
+    )
+
+    if res.status_code in [401, 403] and retry:
+        if refresh_access_token():
+            res = requests.request(
+                method,
+                url,
+                headers=auth_headers(),
+                timeout=30,
+                **kwargs
+            )
+
     if not res.ok:
         st.error(f"Supabase error {res.status_code}: {res.text}")
         res.raise_for_status()
+
     if res.text:
         return res.json()
+
     return None
 
 
@@ -165,6 +186,44 @@ def restore_session_from_cookies():
         st.session_state["refresh_token"] = refresh_token
         st.session_state["user_id"] = user_id
         st.session_state["email"] = email
+
+def refresh_access_token():
+    refresh_token = st.session_state.get("refresh_token")
+
+    if not refresh_token:
+        return False
+
+    payload = {"refresh_token": refresh_token}
+
+    res = requests.post(
+        f"{AUTH_URL}/token?grant_type=refresh_token",
+        headers={
+            "apikey": SUPABASE_KEY,
+            "Content-Type": "application/json",
+        },
+        data=json.dumps(payload),
+        timeout=30,
+    )
+
+    if not res.ok:
+        logout_user()
+        return False
+
+    data = res.json()
+
+    st.session_state["access_token"] = data["access_token"]
+    st.session_state["refresh_token"] = data.get("refresh_token")
+    st.session_state["user"] = data["user"]
+    st.session_state["user_id"] = data["user"]["id"]
+    st.session_state["email"] = data["user"]["email"]
+
+    cookies["access_token"] = data["access_token"]
+    cookies["refresh_token"] = data.get("refresh_token", "")
+    cookies["user_id"] = data["user"]["id"]
+    cookies["email"] = data["user"]["email"]
+    cookies.save()
+
+    return True
 
 def show_login_screen():
     st.markdown('<div class="main-title">🔥 Plasma Cutting Assistant</div>', unsafe_allow_html=True)
