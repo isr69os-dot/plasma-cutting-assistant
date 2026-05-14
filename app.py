@@ -2,6 +2,7 @@ import io
 import json
 import uuid
 from datetime import datetime
+from streamlit_cookies_manager import EncryptedCookieManager
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,14 @@ st.set_page_config(
     page_icon="🔥",
     layout="wide",
 )
+
+cookies = EncryptedCookieManager(
+    prefix="plasma_assistant",
+    password=st.secrets["COOKIE_PASSWORD"],
+)
+
+if not cookies.ready():
+    st.stop()
 
 st.markdown("""
 <style>
@@ -85,7 +94,7 @@ def sort_thickness_values(values):
     return sorted(values, key=lambda x: float(x))
 
 
-def login_user(email, password):
+def login_user(email, password, remember_me=False):
     payload = {"email": email, "password": password}
     res = requests.post(
         f"{AUTH_URL}/token?grant_type=password",
@@ -99,11 +108,20 @@ def login_user(email, password):
         return False
 
     data = res.json()
+
     st.session_state["access_token"] = data["access_token"]
     st.session_state["refresh_token"] = data.get("refresh_token")
     st.session_state["user"] = data["user"]
     st.session_state["user_id"] = data["user"]["id"]
     st.session_state["email"] = data["user"]["email"]
+
+    if remember_me:
+        cookies["access_token"] = data["access_token"]
+        cookies["refresh_token"] = data.get("refresh_token", "")
+        cookies["user_id"] = data["user"]["id"]
+        cookies["email"] = data["user"]["email"]
+        cookies.save()
+
     return True
 
 
@@ -125,9 +143,26 @@ def register_user(email, password):
 
 
 def logout_user():
+    for key in ["access_token", "refresh_token", "user_id", "email"]:
+        cookies[key] = ""
+    cookies.save()
     st.session_state.clear()
     st.rerun()
 
+def restore_session_from_cookies():
+    if "access_token" in st.session_state:
+        return
+
+    access_token = cookies.get("access_token")
+    refresh_token = cookies.get("refresh_token")
+    user_id = cookies.get("user_id")
+    email = cookies.get("email")
+
+    if access_token and user_id and email:
+        st.session_state["access_token"] = access_token
+        st.session_state["refresh_token"] = refresh_token
+        st.session_state["user_id"] = user_id
+        st.session_state["email"] = email
 
 def show_login_screen():
     st.markdown('<div class="main-title">🔥 Plasma Cutting Assistant</div>', unsafe_allow_html=True)
@@ -136,11 +171,13 @@ def show_login_screen():
     login_tab, register_tab = st.tabs(["Login", "Register"])
 
     with login_tab:
-        email = st.text_input("Email", key="login_email")
-        password = st.text_input("Password", type="password", key="login_password")
-        if st.button("Login"):
-            if login_user(email, password):
-                st.rerun()
+     email = st.text_input("Email", key="login_email")
+     password = st.text_input("Password", type="password", key="login_password")
+     remember_me = st.checkbox("Keep me logged in", value=True)
+
+     if st.button("Login"):
+        if login_user(email, password, remember_me):
+            st.rerun()
 
     with register_tab:
         new_email = st.text_input("Email", key="register_email")
@@ -397,6 +434,7 @@ def history_to_dataframe(history):
         })
     return pd.DataFrame(rows)
 
+restore_session_from_cookies()
 
 if "access_token" not in st.session_state:
     show_login_screen()
