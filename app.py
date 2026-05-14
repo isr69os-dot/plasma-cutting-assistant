@@ -233,13 +233,13 @@ def show_login_screen():
     login_tab, register_tab = st.tabs(["Login", "Register"])
 
     with login_tab:
-     email = st.text_input("Email", key="login_email")
-     password = st.text_input("Password", type="password", key="login_password")
-     remember_me = st.checkbox("Keep me logged in", value=True)
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+        remember_me = st.checkbox("Keep me logged in", value=True)
 
-     if st.button("Login"):
-        if login_user(email, password, remember_me):
-            st.rerun()
+        if st.button("Login"):
+            if login_user(email, password, remember_me):
+                st.rerun()
 
     with register_tab:
         new_email = st.text_input("Email", key="register_email")
