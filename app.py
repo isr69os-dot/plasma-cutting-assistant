@@ -489,7 +489,26 @@ def build_smart_feedback(params, manual_items, image_items, history, material, t
 
     if all_items:
         first = all_items[0]
-        diagnosis = first.get("parameter", "General cut tuning")
+        parameter = first.get("parameter", "General")
+        reason = first.get("reason", "")
+
+        if parameter == "Speed" and "dross" in reason.lower():
+            diagnosis = "Possible bottom dross caused by low cutting speed"
+
+        elif parameter == "Speed":
+            diagnosis = "Speed tuning may improve the cut"
+
+        elif parameter == "THC":
+            diagnosis = "Possible hole distortion related to THC movement"
+
+        elif parameter == "Kerf":
+            diagnosis = "Possible dimensional error related to kerf compensation"
+
+        elif "height" in parameter.lower() or "voltage" in parameter.lower():
+            diagnosis = "Possible torch height or arc voltage issue"
+
+        else:
+            diagnosis = f"{parameter} related tuning issue"
         next_action = first.get("change", next_action)
         reasons.append(first.get("reason", "Detected from current feedback."))
 
