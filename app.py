@@ -21,7 +21,7 @@ st.markdown("""
 .block-container {padding-top: 1rem; max-width: 1200px;}
 .main-title {font-size: 42px; font-weight: 800; margin-bottom: 0;}
 .subtitle {font-size: 18px; color: #666; margin-bottom: 24px;}
-.card {padding: 16px; border-radius: 18px; background: #f7f7f7; border: 1px solid #e5e5e5;}
+.card {padding: 16px; border-radius: 18px; background: #f7f7f7; border: 1px solid #e5e5e5; margin-bottom: 12px;}
 .recommendation-box {padding: 16px; border-radius: 18px; background: #fff7e6; border: 1px solid #ffd591; margin-bottom: 12px;}
 .stButton > button {width: 100%; border-radius: 12px; min-height: 44px;}
 @media (max-width: 768px) {
@@ -31,64 +31,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<div class="main-title">🔥 Plasma Cutting Assistant</div>', unsafe_allow_html=True)
-st.markdown(
-    '<div class="subtitle">Cloud-based CNC plasma cutting calibration and learning platform</div>',
-    unsafe_allow_html=True,
-)
 
 PARAMETER_NAMES = [
     "Current [A]", "Nozzle [mm]", "Speed [mm/min]", "Arc voltage [V]",
     "Cut height [mm]", "Pierce height [mm]", "Pierce delay [s]",
     "Kerf [mm]", "THC mode", "Gas / assist", "IHS setting",
 ]
-
-DEFAULT_PARAMETERS = {
-    "Black Steel": {
-        "1.5": [35, 1.1, 3800, 110, 1.5, 3.0, 0.25, 1.20, "OFF / minimal", "Air", 0.25],
-        "2.0": [40, 1.1, 3300, 112, 1.5, 3.0, 0.30, 1.25, "OFF / minimal", "Air", 0.28],
-        "3.0": [45, 1.1, 2400, 113, 1.5, 3.0, 0.45, 1.35, "ON lines / OFF holes", "Air", 0.30],
-        "4.0": [55, 1.3, 2100, 116, 1.5, 3.5, 0.50, 1.50, "ON lines / OFF holes", "Air", 0.32],
-        "5.0": [60, 1.3, 1800, 118, 1.5, 3.5, 0.55, 1.60, "ON lines / OFF holes", "Air", 0.33],
-        "6.0": [65, 1.5, 1500, 114, 1.5, 3.5, 0.60, 1.75, "ON lines / OFF holes", "Air", 0.35],
-        "8.0": [80, 1.5, 1200, 125, 1.8, 4.0, 0.80, 1.90, "ON lines / OFF holes", "Air", 0.38],
-        "10.0": [90, 1.5, 1000, 128, 1.8, 4.0, 0.90, 2.10, "ON", "Air", 0.40],
-        "12.0": [100, 1.7, 850, 132, 2.0, 4.5, 1.00, 2.30, "ON", "Air", 0.45],
-    },
-    "Galvanized Steel": {
-        "1.5": [35, 1.1, 3600, 110, 1.5, 3.0, 0.25, 1.20, "OFF / minimal", "Air", 0.25],
-        "2.0": [40, 1.1, 3100, 112, 1.5, 3.0, 0.30, 1.25, "OFF / minimal", "Air", 0.28],
-        "3.0": [45, 1.1, 2300, 112, 1.5, 3.0, 0.45, 1.35, "ON lines / OFF holes", "Air", 0.30],
-        "4.0": [55, 1.3, 2000, 115, 1.5, 3.5, 0.50, 1.50, "ON lines / OFF holes", "Air", 0.32],
-        "5.0": [60, 1.3, 1700, 117, 1.5, 3.5, 0.55, 1.60, "ON lines / OFF holes", "Air", 0.33],
-        "6.0": [65, 1.5, 1400, 114, 1.5, 3.5, 0.60, 1.75, "ON lines / OFF holes", "Air", 0.35],
-        "8.0": [80, 1.5, 1150, 124, 1.8, 4.0, 0.80, 1.90, "ON lines / OFF holes", "Air", 0.38],
-        "10.0": [90, 1.5, 950, 127, 1.8, 4.0, 0.90, 2.10, "ON", "Air", 0.40],
-        "12.0": [100, 1.7, 800, 131, 2.0, 4.5, 1.00, 2.30, "ON", "Air", 0.45],
-    },
-    "Stainless Steel": {
-        "1.5": [35, 1.1, 3000, 112, 1.5, 3.0, 0.30, 1.25, "OFF / minimal", "Air / Nitrogen optional", 0.25],
-        "2.0": [40, 1.1, 2600, 114, 1.5, 3.0, 0.35, 1.30, "OFF / minimal", "Air / Nitrogen optional", 0.28],
-        "3.0": [50, 1.1, 1900, 116, 1.5, 3.5, 0.50, 1.45, "ON lines / OFF holes", "Air / Nitrogen optional", 0.30],
-        "4.0": [60, 1.3, 1600, 118, 1.5, 3.5, 0.55, 1.60, "ON lines / OFF holes", "Air / Nitrogen optional", 0.32],
-        "5.0": [70, 1.5, 1300, 120, 1.8, 4.0, 0.65, 1.80, "ON lines / OFF holes", "Air / Nitrogen optional", 0.35],
-        "6.0": [80, 1.5, 1100, 123, 1.8, 4.0, 0.75, 1.95, "ON lines / OFF holes", "Air / Nitrogen optional", 0.38],
-        "8.0": [90, 1.5, 850, 126, 1.8, 4.0, 0.90, 2.15, "ON", "Air / Nitrogen optional", 0.40],
-        "10.0": [100, 1.7, 700, 130, 2.0, 4.5, 1.10, 2.35, "ON", "Air / Nitrogen optional", 0.45],
-        "12.0": [100, 1.7, 600, 134, 2.0, 4.5, 1.25, 2.55, "ON", "Air / Nitrogen optional", 0.48],
-    },
-    "Aluminum": {
-        "1.5": [35, 1.1, 4200, 110, 1.5, 3.0, 0.25, 1.25, "OFF / minimal", "Air / Nitrogen optional", 0.25],
-        "2.0": [40, 1.1, 3600, 112, 1.5, 3.0, 0.30, 1.30, "OFF / minimal", "Air / Nitrogen optional", 0.28],
-        "3.0": [50, 1.1, 2700, 114, 1.5, 3.5, 0.40, 1.45, "ON lines / OFF holes", "Air / Nitrogen optional", 0.30],
-        "4.0": [60, 1.3, 2200, 116, 1.5, 3.5, 0.50, 1.60, "ON lines / OFF holes", "Air / Nitrogen optional", 0.32],
-        "5.0": [70, 1.5, 1800, 118, 1.8, 4.0, 0.60, 1.80, "ON lines / OFF holes", "Air / Nitrogen optional", 0.35],
-        "6.0": [80, 1.5, 1500, 120, 1.8, 4.0, 0.70, 1.95, "ON lines / OFF holes", "Air / Nitrogen optional", 0.38],
-        "8.0": [90, 1.5, 1200, 123, 1.8, 4.0, 0.85, 2.15, "ON", "Air / Nitrogen optional", 0.40],
-        "10.0": [100, 1.7, 950, 126, 2.0, 4.5, 1.00, 2.35, "ON", "Air / Nitrogen optional", 0.45],
-        "12.0": [100, 1.7, 750, 130, 2.0, 4.5, 1.20, 2.55, "ON", "Air / Nitrogen optional", 0.48],
-    },
-}
 
 MACHINE_PROFILES = {
     "Rayline CNC + P80 + F1620 V3 THC": {"voltage_offset": -1, "speed_factor": 1.00, "kerf_offset": 0.10},
@@ -102,17 +50,29 @@ SUPABASE_URL = st.secrets["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = st.secrets["SUPABASE_ANON_KEY"]
 
 REST_URL = f"{SUPABASE_URL}/rest/v1"
+AUTH_URL = f"{SUPABASE_URL}/auth/v1"
 STORAGE_URL = f"{SUPABASE_URL}/storage/v1"
 
-HEADERS_JSON = {
-    "apikey": SUPABASE_KEY,
-    "Authorization": f"Bearer {SUPABASE_KEY}",
-    "Content-Type": "application/json",
-}
+
+def base_headers():
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+    }
 
 
-def request_or_error(method, url, **kwargs):
-    res = requests.request(method, url, timeout=30, **kwargs)
+def auth_headers():
+    token = st.session_state.get("access_token")
+    return {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+
+def request_or_error(method, url, headers=None, **kwargs):
+    res = requests.request(method, url, headers=headers or base_headers(), timeout=30, **kwargs)
     if not res.ok:
         st.error(f"Supabase error {res.status_code}: {res.text}")
         res.raise_for_status()
@@ -125,12 +85,92 @@ def sort_thickness_values(values):
     return sorted(values, key=lambda x: float(x))
 
 
+def login_user(email, password):
+    payload = {"email": email, "password": password}
+    res = requests.post(
+        f"{AUTH_URL}/token?grant_type=password",
+        headers={"apikey": SUPABASE_KEY, "Content-Type": "application/json"},
+        data=json.dumps(payload),
+        timeout=30,
+    )
+
+    if not res.ok:
+        st.error("Login failed. Check email/password.")
+        return False
+
+    data = res.json()
+    st.session_state["access_token"] = data["access_token"]
+    st.session_state["refresh_token"] = data.get("refresh_token")
+    st.session_state["user"] = data["user"]
+    st.session_state["user_id"] = data["user"]["id"]
+    st.session_state["email"] = data["user"]["email"]
+    return True
+
+
+def register_user(email, password):
+    payload = {"email": email, "password": password}
+    res = requests.post(
+        f"{AUTH_URL}/signup",
+        headers={"apikey": SUPABASE_KEY, "Content-Type": "application/json"},
+        data=json.dumps(payload),
+        timeout=30,
+    )
+
+    if not res.ok:
+        st.error(f"Registration failed: {res.text}")
+        return False
+
+    st.success("User created. Now log in.")
+    return True
+
+
+def logout_user():
+    st.session_state.clear()
+    st.rerun()
+
+
+def show_login_screen():
+    st.markdown('<div class="main-title">🔥 Plasma Cutting Assistant</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Login to your CNC plasma calibration workspace</div>', unsafe_allow_html=True)
+
+    login_tab, register_tab = st.tabs(["Login", "Register"])
+
+    with login_tab:
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+        if st.button("Login"):
+            if login_user(email, password):
+                st.rerun()
+
+    with register_tab:
+        new_email = st.text_input("Email", key="register_email")
+        new_password = st.text_input("Password", type="password", key="register_password")
+        if st.button("Create account"):
+            register_user(new_email, new_password)
+
+
 def param_row_to_list(row):
     return [
         row["current_a"], row["nozzle_mm"], row["speed_mm_min"], row["arc_voltage_v"],
         row["cut_height_mm"], row["pierce_height_mm"], row["pierce_delay_s"],
         row["kerf_mm"], row["thc_mode"], row["gas_assist"], row["ihs_setting"],
     ]
+
+
+@st.cache_data(ttl=30)
+def load_parameters_cloud():
+    rows = request_or_error(
+        "GET",
+        f"{REST_URL}/parameters?select=*&order=material.asc,thickness.asc",
+        headers=base_headers(),
+    )
+    database = {}
+    for row in rows:
+        material = row["material"]
+        thickness = row["thickness"]
+        database.setdefault(material, {})
+        database[material][thickness] = param_row_to_list(row)
+    return database
 
 
 def param_list_to_row(material, thickness, values):
@@ -151,68 +191,54 @@ def param_list_to_row(material, thickness, values):
     }
 
 
-def seed_default_parameters_if_empty():
-    rows = request_or_error("GET", f"{REST_URL}/parameters?select=id&limit=1", headers=HEADERS_JSON)
-    if rows:
-        return
-
-    payload = []
-    for material, thicknesses in DEFAULT_PARAMETERS.items():
-        for thickness, values in thicknesses.items():
-            payload.append(param_list_to_row(material, thickness, values))
-
-    request_or_error(
-        "POST",
-        f"{REST_URL}/parameters",
-        headers={**HEADERS_JSON, "Prefer": "return=minimal"},
-        data=json.dumps(payload),
-    )
-
-
-@st.cache_data(ttl=30)
-def load_parameters_cloud():
-    rows = request_or_error(
-        "GET",
-        f"{REST_URL}/parameters?select=*&order=material.asc,thickness.asc",
-        headers=HEADERS_JSON,
-    )
-    database = {}
-    for row in rows:
-        material = row["material"]
-        thickness = row["thickness"]
-        database.setdefault(material, {})
-        database[material][thickness] = param_row_to_list(row)
-    return database
-
-
 def update_parameter_cloud(material, thickness, values):
     payload = param_list_to_row(material, thickness, values)
     request_or_error(
         "POST",
         f"{REST_URL}/parameters?on_conflict=material,thickness",
-        headers={**HEADERS_JSON, "Prefer": "resolution=merge-duplicates,return=minimal"},
+        headers={**base_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"},
         data=json.dumps(payload),
     )
     st.cache_data.clear()
+
+
+@st.cache_data(ttl=20)
+def load_cut_history_cloud(user_token):
+    rows = request_or_error(
+        "GET",
+        f"{REST_URL}/cut_history?select=*&order=created_at.desc&limit=500",
+        headers=auth_headers(),
+    )
+    return rows or []
 
 
 def save_cut_history_cloud(record):
     request_or_error(
         "POST",
         f"{REST_URL}/cut_history",
-        headers={**HEADERS_JSON, "Prefer": "return=minimal"},
+        headers={**auth_headers(), "Prefer": "return=minimal"},
         data=json.dumps(record),
     )
 
 
-@st.cache_data(ttl=20)
-def load_cut_history_cloud():
+@st.cache_data(ttl=30)
+def load_pricing_table(user_token):
     rows = request_or_error(
         "GET",
-        f"{REST_URL}/cut_history?select=*&order=created_at.desc&limit=500",
-        headers=HEADERS_JSON,
+        f"{REST_URL}/pricing_table?select=*&order=thickness.asc",
+        headers=auth_headers(),
     )
     return rows or []
+
+
+def upsert_pricing_row(row):
+    request_or_error(
+        "POST",
+        f"{REST_URL}/pricing_table?on_conflict=user_id,thickness",
+        headers={**auth_headers(), "Prefer": "resolution=merge-duplicates,return=minimal"},
+        data=json.dumps(row),
+    )
+    st.cache_data.clear()
 
 
 def upload_images_to_cloud(uploaded_images):
@@ -226,7 +252,7 @@ def upload_images_to_cloud(uploaded_images):
         image.save(buffer, format="JPEG", quality=88)
         buffer.seek(0)
 
-        path = f"{datetime.now().strftime('%Y%m%d')}/{uuid.uuid4().hex}.jpg"
+        path = f"{st.session_state['user_id']}/{datetime.now().strftime('%Y%m%d')}/{uuid.uuid4().hex}.jpg"
         upload_url = f"{STORAGE_URL}/object/cut-images/{path}"
 
         headers = {
@@ -372,12 +398,36 @@ def history_to_dataframe(history):
     return pd.DataFrame(rows)
 
 
-seed_default_parameters_if_empty()
-DATABASE = load_parameters_cloud()
+if "access_token" not in st.session_state:
+    show_login_screen()
+    st.stop()
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "⚙️ Parameters", "📷 Feedback", "🧠 Recommendation", "✏️ Edit", "📚 History", "📊 Analytics"
+
+st.markdown('<div class="main-title">🔥 Plasma Cutting Assistant</div>', unsafe_allow_html=True)
+st.markdown(
+    f'<div class="subtitle">Logged in as {st.session_state.get("email")}</div>',
+    unsafe_allow_html=True,
+)
+
+top1, top2 = st.columns([4, 1])
+with top2:
+    if st.button("Logout"):
+        logout_user()
+
+
+DATABASE = load_parameters_cloud()
+current_token = st.session_state["access_token"]
+
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+    "⚙️ Parameters",
+    "📷 Feedback",
+    "🧠 Recommendation",
+    "✏️ Edit",
+    "📚 History",
+    "📊 Analytics",
+    "💰 Pricing",
 ])
+
 
 with tab1:
     left, right = st.columns([1, 2])
@@ -415,6 +465,7 @@ with tab1:
         st.table({"Parameter": list(params.keys()), "Value": list(params.values())})
         st.warning("Starting values only. Calibrate per machine.")
 
+
 with tab2:
     st.subheader("Cut images + manual feedback")
 
@@ -451,6 +502,7 @@ with tab2:
 
     score = st.slider("Result score", 1, 10, 5)
     notes = st.text_area("Notes")
+
 
 with tab3:
     st.subheader("Recommended next cut")
@@ -491,6 +543,7 @@ Gas: {params['Gas / assist']}
         image_urls = upload_images_to_cloud(uploaded_images)
 
         record = {
+            "user_id": st.session_state["user_id"],
             "material": material,
             "thickness": thickness,
             "machine_profile": machine_profile,
@@ -508,13 +561,13 @@ Gas: {params['Gas / assist']}
 
         save_cut_history_cloud(record)
         st.cache_data.clear()
-        st.success("Saved to Supabase cloud, including images.")
+        st.success("Saved to your cloud history, including images.")
+
 
 with tab4:
     st.subheader("Edit cloud parameters")
 
     edit_material = st.selectbox("Material to edit", list(DATABASE.keys()), key="edit_material")
-
     edit_thickness_options = sort_thickness_values(DATABASE[edit_material].keys())
     edit_thickness = st.selectbox("Thickness to edit", edit_thickness_options, key="edit_thickness")
 
@@ -533,13 +586,14 @@ with tab4:
         update_parameter_cloud(edit_material, edit_thickness, values)
         st.success("Cloud parameters updated. Refresh if needed.")
 
-with tab5:
-    st.subheader("Cloud cut history")
 
-    history = load_cut_history_cloud()
+with tab5:
+    st.subheader("My cut history")
+
+    history = load_cut_history_cloud(current_token)
 
     if not history:
-        st.info("No cloud history yet.")
+        st.info("No cut history yet.")
     else:
         for i, record in enumerate(history, start=1):
             with st.expander(
@@ -568,10 +622,11 @@ with tab5:
                         with cols[j % 2]:
                             st.image(url, use_container_width=True)
 
-with tab6:
-    st.subheader("Cut analytics")
 
-    history = load_cut_history_cloud()
+with tab6:
+    st.subheader("My cut analytics")
+
+    history = load_cut_history_cloud(current_token)
 
     if not history:
         st.info("No cut history yet. Save a few tests first.")
@@ -608,29 +663,136 @@ with tab6:
         best_df = df.sort_values("score", ascending=False).head(10)
         st.dataframe(best_df, use_container_width=True)
 
-        st.subheader("Average best parameters")
-
         high_score_df = df[df["score"] >= 8]
+
+        st.subheader("Average best parameters")
 
         if high_score_df.empty:
             st.info("No high-score cuts yet. Save cuts with score 8+ to build validated parameters.")
         else:
-            avg_speed = round(high_score_df["speed"].mean(), 0)
-            avg_voltage = round(high_score_df["voltage"].mean(), 1)
-            avg_kerf = round(high_score_df["kerf"].mean(), 2)
-
             c1, c2, c3 = st.columns(3)
-            c1.metric("Avg speed", f"{avg_speed} mm/min")
-            c2.metric("Avg voltage", f"{avg_voltage} V")
-            c3.metric("Avg kerf", f"{avg_kerf} mm")
+            c1.metric("Avg speed", f"{round(high_score_df['speed'].mean(), 0)} mm/min")
+            c2.metric("Avg voltage", f"{round(high_score_df['voltage'].mean(), 1)} V")
+            c3.metric("Avg kerf", f"{round(high_score_df['kerf'].mean(), 2)} mm")
 
-        st.subheader("Learning insight")
 
-        if len(df) < 3:
-            st.info("Save at least 3 tests for this setup to generate meaningful learning insights.")
-        else:
-            best = df.sort_values("score", ascending=False).iloc[0]
-            st.success(
-                f"Best recorded setup: {best['material']} {best['thickness']} mm, "
-                f"{best['speed']} mm/min, {best['voltage']} V, score {best['score']}."
+with tab7:
+    st.subheader("Pricing calculator")
+
+    pricing_rows = load_pricing_table(current_token)
+
+    if not pricing_rows:
+        st.error("Pricing table is empty.")
+    else:
+        pricing_df = pd.DataFrame(pricing_rows)
+        pricing_df["thickness_float"] = pricing_df["thickness"].astype(float)
+        pricing_df = pricing_df.sort_values("thickness_float")
+
+        left, right = st.columns([1, 1])
+
+        with left:
+            selected_thickness = st.selectbox(
+                "Thickness [mm]",
+                pricing_df["thickness"].tolist(),
+                key="pricing_thickness"
             )
+
+            row = pricing_df[pricing_df["thickness"] == selected_thickness].iloc[0]
+
+            cut_length_m = st.number_input("Total cutting length [m]", min_value=0.0, value=1.0, step=0.1)
+            pierces = st.number_input("Number of pierces", min_value=0, value=1, step=1)
+            quantity = st.number_input("Quantity", min_value=1, value=1, step=1)
+
+            include_file_setup = st.checkbox("Include DXF/file setup", value=True)
+            include_finish = st.checkbox("Include finishing / dross cleanup", value=False)
+            urgent = st.checkbox("Urgent job factor", value=False)
+
+        with right:
+            price_per_meter = float(row["price_per_meter"])
+            price_per_pierce = float(row["price_per_pierce"])
+            minimum_price = float(row.get("minimum_price") or 0)
+            file_setup_price = float(row.get("file_setup_price") or 0)
+            finish_price = float(row.get("finish_price") or 0)
+            urgent_factor = float(row.get("urgent_factor") or 1)
+
+            base_cut_price = cut_length_m * price_per_meter
+            pierce_price = pierces * price_per_pierce
+            setup_price = file_setup_price if include_file_setup else 0
+            finishing_price = finish_price if include_finish else 0
+
+            subtotal_single = base_cut_price + pierce_price + setup_price + finishing_price
+            subtotal_all = subtotal_single * quantity
+
+            if urgent:
+                subtotal_all *= urgent_factor
+
+            final_price = max(subtotal_all, minimum_price)
+
+            st.metric("Cut length price", f"₪{base_cut_price:.2f}")
+            st.metric("Pierce price", f"₪{pierce_price:.2f}")
+            st.metric("Setup price", f"₪{setup_price:.2f}")
+            st.metric("Final price", f"₪{final_price:.2f}")
+
+            st.info(
+                f"Price basis: ₪{price_per_meter}/m, ₪{price_per_pierce}/pierce, minimum ₪{minimum_price}"
+            )
+
+        st.divider()
+        st.subheader("Pricing table")
+
+        st.dataframe(
+            pricing_df[
+                ["thickness", "price_per_meter", "price_per_pierce", "typical_speed_mm_min", "minimum_price", "file_setup_price"]
+            ],
+            use_container_width=True
+        )
+
+        st.subheader("Edit my pricing")
+
+        edit_price_thickness = st.selectbox(
+            "Thickness to edit",
+            pricing_df["thickness"].tolist(),
+            key="edit_price_thickness"
+        )
+
+        edit_row = pricing_df[pricing_df["thickness"] == edit_price_thickness].iloc[0]
+
+        new_price_per_meter = st.number_input(
+            "Price per meter",
+            value=float(edit_row["price_per_meter"]),
+            key="new_price_per_meter"
+        )
+
+        new_price_per_pierce = st.number_input(
+            "Price per pierce",
+            value=float(edit_row["price_per_pierce"]),
+            key="new_price_per_pierce"
+        )
+
+        new_minimum_price = st.number_input(
+            "Minimum price",
+            value=float(edit_row.get("minimum_price") or 0),
+            key="new_minimum_price"
+        )
+
+        new_file_setup_price = st.number_input(
+            "File setup price",
+            value=float(edit_row.get("file_setup_price") or 0),
+            key="new_file_setup_price"
+        )
+
+        if st.button("Save my pricing"):
+            payload = {
+                "user_id": st.session_state["user_id"],
+                "thickness": edit_price_thickness,
+                "price_per_meter": new_price_per_meter,
+                "price_per_pierce": new_price_per_pierce,
+                "typical_speed_mm_min": float(edit_row.get("typical_speed_mm_min") or 0),
+                "minimum_price": new_minimum_price,
+                "file_setup_price": new_file_setup_price,
+                "finish_price": float(edit_row.get("finish_price") or 0),
+                "urgent_factor": float(edit_row.get("urgent_factor") or 1),
+            }
+
+            upsert_pricing_row(payload)
+            st.success("Personal pricing updated.")
