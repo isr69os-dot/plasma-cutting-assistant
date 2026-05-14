@@ -222,6 +222,7 @@ def refresh_access_token():
     cookies["user_id"] = data["user"]["id"]
     cookies["email"] = data["user"]["email"]
     cookies.save()
+    st.cache_data.clear()
 
     return True
 
@@ -875,17 +876,41 @@ with tab7:
 
             row = pricing_df[pricing_df["thickness"] == selected_thickness].iloc[0]
 
+            dxf_file = st.file_uploader(
+                "Upload DXF for automatic cut length",
+                type=["dxf"],
+                key="pricing_dxf"
+            )
+
+            if dxf_file is not None:
+                try:
+                    dxf_result = analyze_dxf(dxf_file)
+                    default_cut_length = float(dxf_result["total_length_m"])
+                    default_pierces = int(dxf_result["pierce_estimate"])
+
+                    st.success("DXF analyzed successfully.")
+                    st.metric("DXF cut length", f"{default_cut_length} m")
+                    st.metric("Estimated pierces", default_pierces)
+
+                except Exception as e:
+                    st.error(f"DXF analysis failed: {e}")
+                    default_cut_length = 1.0
+                    default_pierces = 1
+            else:
+                default_cut_length = 1.0
+                default_pierces = 1
+
             cut_length_m = st.number_input(
                 "Total cutting length [m]",
                 min_value=0.0,
-                value=1.0,
+                value=default_cut_length,
                 step=0.1
             )
 
             pierces = st.number_input(
                 "Number of pierces",
                 min_value=0,
-                value=1,
+                value=default_pierces,
                 step=1
             )
 
