@@ -473,6 +473,76 @@ def manual_suggestions(params, dross, cut_angle, hole_quality, arc_stability):
 
     return suggestions
 
+def build_smart_feedback(params, manual_items, image_items, history, material, thickness, machine_profile):
+    all_items = manual_items + image_items
+
+    diagnosis = "General cut tuning"
+    confidence_score = 0
+    reasons = []
+    next_action = "Change only one parameter and run another test cut."
+    validation = [
+        "Check bottom dross",
+        "Check edge roughness",
+        "Check bevel direction",
+        "Check hole roundness if relevant",
+    ]
+
+    if all_items:
+        first = all_items[0]
+        diagnosis = first.get("parameter", "General cut tuning")
+        next_action = first.get("change", next_action)
+        reasons.append(first.get("reason", "Detected from current feedback."))
+
+    similar_success = []
+    for record in history:
+        if (
+            record.get("material") == material
+            and record.get("thickness") == thickness
+            and record.get("machine_profile") == machine_profile
+            and record.get("score", 0) >= 8
+        ):
+            similar_success.append(record)
+
+    if similar_success:
+        confidence_score += 1
+        reasons.append(f"Found {len(similar_success)} successful similar cuts in your history.")
+
+        speeds = [
+            r.get("parameters", {}).get("Speed [mm/min]")
+            for r in similar_success
+            if r.get("parameters", {}).get("Speed [mm/min]") is not None
+        ]
+
+        if speeds:
+            avg_speed = round(sum(speeds) / len(speeds))
+            current_speed = params["Speed [mm/min]"]
+            delta = avg_speed - current_speed
+
+            if abs(delta) >= 50:
+                next_action = f"Try speed around {avg_speed} mm/min ({delta:+.0f} mm/min from current)."
+                reasons.append("Your successful cuts point to a different speed range.")
+
+    if len(all_items) >= 2:
+        confidence_score += 1
+
+    if len(similar_success) >= 3:
+        confidence_score += 1
+
+    if confidence_score >= 3:
+        confidence = "High"
+    elif confidence_score == 2:
+        confidence = "Medium"
+    else:
+        confidence = "Low"
+
+    return {
+        "diagnosis": diagnosis,
+        "confidence": confidence,
+        "reasons": reasons,
+        "next_action": next_action,
+        "validation": validation,
+        "similar_success_count": len(similar_success),
+    }
 
 def history_to_dataframe(history):
     rows = []
@@ -684,7 +754,20 @@ with tab2:
 with tab3:
     st.subheader("Recommended next cut")
 
-    all_suggestions = manual_suggestions(params, dross, cut_angle, hole_quality, arc_stability) + image_based_suggestions
+    manual_items = manual_suggestions(params, dross, cut_angle, hole_quality, arc_stability)
+    history_for_feedback = load_cut_history_cloud(current_token)
+
+    smart_feedback = build_smart_feedback(
+    params=params,
+    manual_items=manual_items,
+    image_items=image_based_suggestions,
+    history=history_for_feedback,
+    material=material,
+    thickness=thickness,
+    machine_profile=machine_profile,
+)
+
+    all_suggestions = manual_items + image_based_suggestions
 
     st.code(f"""Material: {material}
 Thickness: {thickness} mm
@@ -698,6 +781,29 @@ Gas: {params['Gas / assist']}
 """)
 
     if st.button("Generate recommendation"):
+        st.subheader("Smart feedback summary")
+
+        st.markdown(
+            f"""
+            <div class="recommendation-box">
+            <b>Diagnosis:</b> {smart_feedback['diagnosis']}<br>
+            <b>Confidence:</b> {smart_feedback['confidence']}<br><br>
+            <b>Recommended next action:</b><br>
+            {smart_feedback['next_action']}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.write("Why:")
+        for reason in smart_feedback["reasons"]:
+            st.write(f"- {reason}")
+
+        st.write("Check after next cut:")
+        for item in smart_feedback["validation"]:
+            st.write(f"- {item}")
+
+        st.divider()
         if not all_suggestions:
             st.info("No strong correction detected. Change only one parameter at a time.")
         else:
