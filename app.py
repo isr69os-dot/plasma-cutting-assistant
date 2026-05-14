@@ -808,14 +808,15 @@ Gas: {params['Gas / assist']}
             st.info("No strong correction detected. Change only one parameter at a time.")
         else:
             seen = set()
+            st.subheader("Technical observations")
             for s in all_suggestions:
                 key = (s["parameter"], s["change"])
                 if key in seen:
                     continue
                 seen.add(key)
                 st.markdown(
-                    f"""<div class="recommendation-box">
-                    <b>{s['parameter']}</b><br>
+                    f"""<div class="card">
+                    <b>Observation:</b> {s['parameter']}<br>
                     Recommended change: {s['change']}<br>
                     Reason: {s['reason']}
                     </div>""",
