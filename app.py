@@ -256,8 +256,8 @@ def param_row_to_list(row):
     ]
 
 
-@st.cache_data(ttl=30)
-def load_parameters_cloud():
+
+def load_parameters_cloud(user_token, user_id):
     default_rows = request_or_error(
         "GET",
         f"{REST_URL}/parameters?select=*&order=material.asc,thickness.asc",
@@ -269,20 +269,18 @@ def load_parameters_cloud():
     for row in default_rows:
         material = row["material"]
         thickness = row["thickness"]
-
         database.setdefault(material, {})
         database[material][thickness] = param_row_to_list(row)
 
     user_rows = request_or_error(
-        "GET",
-        f"{REST_URL}/user_parameters?select=*",
-        headers=auth_headers(),
-    )
+    "GET",
+    f"{REST_URL}/user_parameters?select=*&user_id=eq.{user_id}",
+    headers=auth_headers(),
+)
 
     for row in user_rows:
         material = row["material"]
         thickness = row["thickness"]
-
         database.setdefault(material, {})
         database[material][thickness] = param_row_to_list(row)
 
@@ -309,7 +307,6 @@ def param_list_to_row(material, thickness, values):
 
 def update_parameter_cloud(material, thickness, values):
     payload = param_list_to_row(material, thickness, values)
-
     payload["user_id"] = st.session_state["user_id"]
 
     request_or_error(
@@ -652,8 +649,10 @@ with top2:
         logout_user()
 
 
-DATABASE = load_parameters_cloud()
 current_token = st.session_state["access_token"]
+current_user_id = st.session_state["user_id"]
+
+DATABASE = load_parameters_cloud(current_token, current_user_id)
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "⚙️ Parameters",
