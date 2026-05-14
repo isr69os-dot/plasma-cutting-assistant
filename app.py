@@ -473,8 +473,29 @@ def manual_suggestions(params, dross, cut_angle, hole_quality, arc_stability):
 
     return suggestions
 
-def build_smart_feedback(params, manual_items, image_items, history, material, thickness, machine_profile):
+def build_smart_feedback(params,manual_items,image_items,history,material,thickness,machine_profile,observed_issues,observation_severity,):
     all_items = manual_items + image_items
+    issue_text = " | ".join(observed_issues).lower()
+
+    if "bottom dross" in issue_text:
+        diagnosis = "Possible bottom dross caused by low cutting speed"
+        confidence_score += 1
+
+    elif "rough edge" in issue_text:
+        diagnosis = "Possible rough edge caused by unstable cut conditions"
+        confidence_score += 1
+
+    elif "hole distortion" in issue_text:
+        diagnosis = "Possible hole distortion related to THC or excessive speed"
+        confidence_score += 1
+
+    elif "incomplete penetration" in issue_text:
+        diagnosis = "Possible incomplete penetration due to excessive speed or insufficient power"
+        confidence_score += 1
+
+    elif "too much bevel" in issue_text:
+        diagnosis = "Possible bevel caused by torch height or consumable wear"
+        confidence_score += 1
 
     diagnosis = "General cut tuning"
     confidence_score = 0
@@ -768,6 +789,28 @@ with tab2:
 
     score = st.slider("Result score", 1, 10, 5)
     notes = st.text_area("Notes")
+    
+    st.subheader("Structured operator observations")
+
+    observed_issues = st.multiselect(
+        "What do you physically observe?",
+        [
+            "Bottom dross",
+            "Top spatter",
+            "Rough edge",
+            "Too much bevel",
+            "Arc instability",
+            "Incomplete penetration",
+            "Hole distortion",
+            "Excessive kerf",
+        ]
+    )
+
+    observation_severity = st.selectbox(
+        "Overall severity",
+        ["Low", "Medium", "High"]
+    )
+
 
 
 with tab3:
@@ -784,7 +827,10 @@ with tab3:
     material=material,
     thickness=thickness,
     machine_profile=machine_profile,
+    observed_issues=observed_issues,
+    observation_severity=observation_severity,
 )
+    
 
     all_suggestions = manual_items + image_based_suggestions
 
@@ -878,6 +924,8 @@ Gas: {params['Gas / assist']}
             "recommendations": all_suggestions,
             "recommendation_result": recommendation_result,
             "recommendation_feedback": recommendation_feedback,
+            "observed_issues": observed_issues,
+            "observation_severity": observation_severity,
         }
 
         save_cut_history_cloud(record)
@@ -929,6 +977,8 @@ with tab5:
                 st.write("Notes:", record["notes"])
                 st.write("Recommendation result:", record.get("recommendation_result"))
                 st.write("Recommendation feedback:", record.get("recommendation_feedback"))
+                st.write("Observed issues:", record.get("observed_issues"))
+                st.write("Observation severity:", record.get("observation_severity"))
 
                 st.subheader("Parameters")
                 st.json(record["parameters"])
