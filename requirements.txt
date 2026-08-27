@@ -1,10 +1,11 @@
-streamlit
+streamlit==1.35.0
 pandas
 pillow
 numpy
+requests
 supabase==2.3.0
 httpx==0.24.1
 httpcore==0.17.3
 h11==0.14.0
 ezdxf
-streamlit-cookies-manager
+streamlit-cookies-manager-v2==0.3.1
