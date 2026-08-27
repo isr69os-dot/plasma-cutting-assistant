@@ -1020,7 +1020,7 @@ with tab5:
                     cols = st.columns(2)
                     for j, url in enumerate(record["image_urls"]):
                         with cols[j % 2]:
-                            st.image(url, use_container_width=True)
+                            st.image(url, use_column_width=True)
 
 
 with tab6:
